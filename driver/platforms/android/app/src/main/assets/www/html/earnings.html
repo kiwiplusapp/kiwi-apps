@@ -1,0 +1,21 @@
+<ons-page id="earnings">
+    <ons-toolbar>
+      <div class="left"><ons-back-button>Back</ons-back-button></div>
+      <div class="center" data-i18nearngs="Earnings">Earnings</div>
+      <div class="right"><ons-button id='sel-earning-day' style='color: white;width:50px;' modifier='outline'><ons-icon style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;" icon='fa-calendar' ></ons-icon></ons-button></div>
+    </ons-toolbar>
+    <div class="screen-wrap-white">
+        <div style="padding: 25px 0px;background-color: var(--set-foreground-color);color: white;">
+            <p style='text-align:center;font-size: 16px;font-weight: bold;'><a style="color:white;margin-top: 10px;padding: 10px;"> <span id='earning-day' data-i18nearngs="Today">Today</span></a></p>
+            <h1 style="font-size:40px;text-align:center;margin-top:25px" id="day-total-earning">0.00</h1>
+            <p style='text-align:center;font-size: 13px;font-weight: bold;' data-i18nearngs="Total Earnings">Total Earnings</p>
+            
+        </div>  
+        
+        <ons-list>
+            <div id="day-earnings"></div>
+        </ons-list>
+    </div>
+  
+  </ons-page>
+  

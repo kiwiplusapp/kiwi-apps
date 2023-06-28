@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!--
+        Customize this policy to fit your own app's needs. For more guidance, see:
+            https://github.com/apache/cordova-plugin-whitelist/blob/master/README.md#content-security-policy
+        Some notes:
+            * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+                * Enable inline JS: add 'unsafe-inline' to default-src
+        -->
+        <meta charset="UTF-8">
+        
+
+        <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'unsafe-inline' * data: gap: https://ssl.gstatic.com 'unsafe-eval'; media-src *;"> -->
+        
+        <meta name="format-detection" content="telephone=no">
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no,viewport-fit=cover">
+        <link rel="stylesheet" type="text/css" href="css/styles.css">
+        <link rel="stylesheet" href="css/owl.carousel.min.css">
+        <link rel="stylesheet" href="css/owl.theme.default.min.css">   
+
+        
+        
+        <link rel="stylesheet" href="css/animate.min.css">
+        <link rel="stylesheet" href="css/onsenui.css">
+        <link rel="stylesheet" href="css/onsen-css-components.min.css">
+        <link rel="stylesheet" href="css/theme.css">
+        <link rel="stylesheet" href="css/intlTelInput.min.css">
+        
+        
+        <script src="js/onsenui.min.js"></script>
+        <script src="js/jquery-3.4.1.min.js"></script>
+        <script src="js/cropit.js"></script>
+        <script src="js/jstz.min.js"></script>
+        <script src="js/pubnub.4.21.7.js"></script>
+        <script src="js/lang/langs.js"></script>
+        <!-- <script src="js/paystack.js"></script> --> <!-- paystack script -->
+        
+        
+             
+
+        <title>Drop Driver</title>
+    </head>
+    <body>
+            
+        <div id="rides-img-preload" style="display:none"></div>
+        <div style='display:none;'><img id="rider-image-preload" src=""><img id="driver-image-preload" src=""></div>
+       <!-- First navigation component: Navigator. This will remain always on top of the app. -->
+        <ons-navigator id="myNavigator" page="splitter.html">
+                           
+                <!-- <div style="width:100%;height:100%;" id="map-canvas-bg"></div> -->
+                <ons-modal id="loading" direction="up">
+                    <div style="text-align: center">
+                        <p>
+                            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                            <!-- <ons-progress-circular indeterminate style="width: 65px;height: 65px;"></ons-progress-circular> -->
+                        </p>
+                    </div>
+                </ons-modal>
+
+                <ons-modal id="animate-circle" direction="up">
+                    <div id="circle-transition" class="circleanimationbg" style="border-radius:50%;width: 0px;height: 0px;position: absolute;left: 50%;top: 50%;border-width: 2000px;border-style: solid;transform: translate(-50%,-50%);"></div>    
+                </ons-modal>
+
+                <ons-modal id="startscreen" direction="up">
+                    <div id="" class="screen-wrap setbgcolor">
+                        <div class="center-screen">
+                            <!-- <div style="text-align:center;">
+                                <img style="display:inline-block;width:60%" src='img/logo.png' />
+                            </div> -->
+                            <p>
+                                <div class="lds-roller white"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                                <!-- <ons-progress-circular id="splash-progress" indeterminate style="width: 65px;height: 65px;"></ons-progress-circular> -->
+                            </p>
+                            <p id="startscreen-text" style="font-size: 18px;font-weight: bold;color:white;" data-i18n="Almost done..." >Cargando...</p>                
+                        </div>        
+                    </div> 
+                </ons-modal>
+
+                <ons-alert-dialog id="notif-dialog" modifier="rowfooter" class="notification-alert-dialog">
+                    <img src="img/notification_bg.jpg" style="width:100%; display:block;margin-bottom:20px;" /> 
+                    <div class="alert-dialog-title" id="notif-title"></div>
+                    <div class="alert-dialog-content" id="notif-content">
+                     
+                    </div>
+                    <div class="alert-dialog-footer">                      
+                      <ons-alert-dialog-button onclick="notification_dialog.hide()" data-i18n="OK">OK</ons-alert-dialog-button>
+                    </div>
+                </ons-alert-dialog>
+
+                <ons-modal id="chat-window" style="background-color: #00000063;" direction="up">
+                    <div style="width: 80%;background-color:white;border: thin solid #999;margin-left:auto;margin-right: auto;">
+                        <div id="chat-window-header" style="position: relative;"><ons-icon onclick="chat_window.hide({animation:'fade'});" icon="fa-minus-square" size="24px" style="color: orange;position:absolute;top:7px;left:7px;"></ons-icon><span style="display:block;padding:10px 10px;font-size: 14px;font-weight:bold;color:black;border-bottom:thin solid #ddd;"><ons-icon icon="fa-comment" style="color: black;"></ons-icon> <span data-i18n="Chat">Chat</span></span></div>
+                        <div id="chat-window-body" style="height:350px; overflow-y: scroll;padding: 5px;">
+
+                        </div>
+                        <div id="chat-window-footer" style="padding:5px;border-top: thin solid #ddd;display: flex;flex-wrap: nowrap;align-items: center;justify-content: space-between;">
+                            <textarea data-i18nn="Enter your message here..." placeholder="Enter your message here..." id="chat-msg-content" style="font-weight: bold;width: calc(100% - 50px);float: left;border: 0;background-color: #eee;border-radius: 10px;padding: 10px;box-sizing: border-box;" rows="3" maxlength="250"></textarea>
+                            <ons-fab onclick="chat_msg_send($(this).data('bookingid'));" id="chat-msg-send-btn" data-bookingid="1" modifier="mini" style="float:right;background-color:#0077ff;margin-right: 2px;"><ons-icon icon="fa-paper-plane" size='20px' style='position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);color:white;'></ons-icon></ons-fab>
+                            <div style="clear: both;"></div>
+                        </div>
+                    </div>
+                </ons-modal>
+
+
+                <ons-modal id="user-info-window" style="background-color: #00000063;" direction="up">
+                    <div style="width: 80%;background-color:white;border: thin solid #999;margin-left:auto;margin-right: auto;border-radius: 5px;color:black">
+                        <div id="user-info-header" style="position: relative;"><ons-icon onclick="user_info_window.hide({animation:'fade'});" icon="fa-minus-square" size="24px" style="color: orange;position:absolute;top:7px;left:7px;"></ons-icon><span style="display:block;padding:10px 10px;font-size: 14px;font-weight:bold;color:black;border-bottom:thin solid #ddd;"><span data-i18n="Rider profile">Rider profile</span></span></div>
+                        <div id="user-info-body" style="height:350px; overflow-y: scroll;padding: 5px;">
+                            <div>
+                                <div style="text-align:center;margin-top:5px;">
+                                    <img id="user-info-photo" src="img/driver.png" style="border-radius:50%;width:100px;height:100px;"/>
+                                    <img id="user-info-image-preload" src="" style = "display:none;" />
+                                </div>
+                                <div>
+                                    <p style="font-size:18px;text-align:center;margin:5px 0;" id="user-info-name">Charles Dickens</p>
+                                    <div style="text-align: center;margin-bottom: 3px;"><img id="user-info-rating" src='img/rating-5.png' style="width:100px;" /></div>
+                                    <p style="margin:3px 0;font-size:14px;text-align:center;"><span data-i18n="Date joined" style="font-weight:bold">Date joined</span>: <span id="user-info-joined"></span></p>
+                                    <p style="margin:3px 0;font-size:14px;text-align:center;"><span data-i18n="Completed trips" style="font-weight:bold">Completed trips</span>: <span id="user-info-completed"></span></p>
+                                    <p style="margin:3px 0;font-size:14px;text-align:center;"><span data-i18n="Cancelled trips" style="font-weight:bold">Cancelled trips</span>: <span id="user-info-cancelled"></span></p>
+                                    
+                                </div>
+
+                            </div>
+                            <div id="user-info-comments" style="text-align:left;margin-top:15px;">
+
+
+                            </div>
+                        </div>
+                        
+                    </div>
+                </ons-modal>
+
+
+                <ons-modal id="ride-request" direction="up">
+                    <div style="width:100%;height:100%;background-size: cover;background-position: 50% 50%;backdrop-filter: blur(5px);background-color: rgba(0,0,0,0.5);">
+                        <div style="text-align:center;padding: 20px;"><ons-button data-bookid="" id="ride-request-cancel" onclick="driverallocatecancelbooking($(this).data('bookid'));" style="color:white;background-color: red;"><ons-icon icon="fa-close" size="20px" modifier="material" style="color:white;vertical-align: bottom;" ></ons-icon> <span data-i18n="Decline">DECLINE</span></ons-button></div>
+                        <div class="center-screen">
+                            
+                            <p style='text-align: center;margin: 5px 0;'data-i18n="Estimated Fare">Estimated Fare</p>
+                            <h2 style="text-align: center;margin:0;" id="ride-estimated-price">₦0.00</h2>
+                            <h4 style="text-align: center;margin:0;" id="ride-payment-type">Wallet Payment</h4>
+
+                            <div style="display: flex;flex-wrap: nowrap;margin-top: 15px;" id="rider-distance-time-ind">
+                                <div style="display: inline-block;width: 50%;border-right: 2px solid white;text-align: right;padding:10px 15px;">
+                                    <h4 id="rider-dist-driver" style="margin:0;">---</h4>
+                                </div>
+                                <div style="display: inline-block;width: 50%;text-align: left;padding:10px 15px">
+                                    <h4 id="rider-dist-time" style="margin:0;">---</h4>
+                                </div>
+                            </div>
+
+                            <div style="position:relative;height:210px;overflow: hidden;">
+                                <img id="rider-image" style="border-radius:50%;position:absolute;width:150px;height:150px;left:50%;top:50%;transform: translate(-50%,-50%);" src='img/dummy-user.png' />
+                                
+                                <ons-progress-circular value='0' id="ride-request-progress-timer" style="position:absolute;left:50%;transform: translate(-50%,-50%);top:50%;width: 200px;height: 200px;"></ons-progress-circular>
+                            </div>
+                            <p id="rider-name" style="text-align:center;font-size:18px;text-transform: capitalize;"></p>
+                            <div style="text-align:center;"><img id="rider-rating" height='20' src="img/rating-4.png"></div>
+                            <div style="text-align: left;margin-top: 15px;"><ons-icon icon="fa-circle" size="18px" style="color: #14ff00; font-size: 14px;position: absolute;" modifier="material" ></ons-icon> <span id="request-pickup" style="display:inline-block;margin-left:22px;font-weight:bold;font-size: 16px;"></span></div>                
+                            <div style="margin-top:15px;text-align: left;"><ons-icon icon="fa-map-marker" size="22px" style="color: #ff3b3b; font-size: 20px;position: absolute;" modifier="material"></ons-icon> <span id="request-dropoff" style="display:inline-block;margin-left:22px;font-weight:bold;"></span></div>
+                        </div> 
+                        <div style="position: absolute;bottom: 30px;text-align: center;width: 100%;left: 0;"><ons-button data-bookid="" id="accept-booking" onclick="acceptride($(this).data('bookid'));" style="color:white;background-color: rgb(18, 168, 18);" ><ons-icon icon="fa-check" size="20px" modifier="material" style="color:white;vertical-align: bottom;" ></ons-icon> <span data-i18n="Accept">ACCEPT</span></ons-button></div>       
+                    </div> 
+                </ons-modal>
+
+
+                                
+                <ons-modal id="update_app" direction="up">
+                    <div style="text-align: center">
+                        
+                    </div>
+                </ons-modal>
+
+                
+                
+
+                
+            
+        </ons-navigator>
+
+
+        <template id="menu.html">
+            <ons-page id="menuPage">
+                <div class="screen-wrap-white">
+                    <ons-list id="links">
+                      <ons-list-item modifier="longdivider" style='height:150px;background-color: var(--set-foreground-color);border-radius: 0px 0px 30px 30px;' >
+                        <div style="text-align:left;width:100%;margin-top:10px;">
+                            <img id="user-menu-photo" style="margin-left:auto;margin-right:auto;border-radius: 50%;height:70px;" onclick="profilepage_show()" src="img/dummy-user.png" />
+                            
+                        </div>
+                        <div style="width:100%;margin-top:10px;">
+                          <p id="users-name" style="font-weight: bold;font-size: 14pt;color: white;width:100%;margin:0" onclick="profilepage_show()" ></p>
+                          <p id="users-wallet" style="font-size: 10pt;color: white;width:100%;margin:0"></p>
+                        </div>
+              
+                      </ons-list-item>
+              
+                      <!-- <ons-list-item tappable style="cursor: pointer" modifier="longdivider" onclick="mylocation()" >
+                        <div class="left">
+                          <ons-icon icon="fa-map" style="color: #c9923d;"></ons-icon>
+                        </div>
+                        <div class="center">
+                          My Location
+                        </div>
+                      </ons-list-item> -->
+              
+                      <!-- <ons-list-item tappable style="cursor: pointer" modifier="longdivider" onclick="getuserlocation()" >
+                          <div class="left">
+                            <ons-icon icon="fa-map-marker" style="color: red;"></ons-icon>
+                          </div>
+                          <div class="center">
+                            My Location
+                          </div>
+                      </ons-list-item> -->
+              
+                      <ons-list-item id="profile" tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider" onclick="profilepage_show()">
+                          <div class="left">
+                            <ons-icon icon="fa-address-book" style="color: #5995fa;"></ons-icon>
+                          </div>
+                          <div class="center" data-i18n="My Profile">
+                            My Profile
+                          </div>
+                      </ons-list-item>
+              
+                      
+                      <ons-list-item id="bookings" tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider" onclick="bookingspage_show()">
+                        <div class="left">
+                          <ons-icon icon="fa-map" style="color: #06c5c5;"></ons-icon>
+                        </div>
+                        <div class="center" data-i18n="Trips">
+                          Trips
+                        </div>
+                      </ons-list-item>
+              
+                      <!-- <ons-list-item id="bookings" tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider" onclick="currentpage_show()">
+                          <div class="left">
+                            <ons-icon icon="fa-tasks" style="color: #07c02f;"></ons-icon>
+                          </div>
+                          <div class="center">
+                            Jobs
+                          </div>
+                        </ons-list-item> -->
+              
+                      <ons-list-item tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider" onclick="walletpage_show()">
+                          <div class="left">
+                            <ons-icon icon="md-balance-wallet" rotate="270" size="20px" style="color: #a28265;"></ons-icon>              
+                          </div>
+                          <div class="center" data-i18n="Wallet">
+                            Wallet
+                          </div>
+                      </ons-list-item>
+              
+              
+                      <ons-list-item tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider" onclick="earningspage_show()">
+                          <div class="left">
+                            <ons-icon icon="fa-money" style="color: #5ba853;"></ons-icon>
+                          </div>
+                          <div class="center" data-i18n="Earnings">
+                            Earnings
+                          </div>
+                      </ons-list-item>
+
+                      <ons-list-item tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider " onclick="promotions_show()">
+                        <div class="left">
+                            <ons-icon icon="fa-gift" style="color: #fa5c5c;"></ons-icon>
+                        </div>
+                        <div class="center" data-i18n="Promotions">
+                            Promotions
+                        </div>
+                    </ons-list-item>
+
+
+                      <ons-list-item id="referrals-menu-item" tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider" onclick="referralspage_show()">
+                        <div class="left">
+                          <ons-icon icon="fa-group" style="color: #607d8b;"></ons-icon>
+                        </div>
+                        <div class="center" data-i18n="My Referrals">
+                            My Referrals
+                        </div>
+                    </ons-list-item>
+              
+              
+                      <!-- <ons-list-item tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider " onclick="logout()">
+                          <div class="left">
+                            <ons-icon icon="fa-sign-out" style="color: #fa5c5c;"></ons-icon>
+                          </div>
+                          <div class="center" data-i18n="Logout">
+                            Logout
+                          </div>
+                      </ons-list-item> -->
+              
+              
+                      <ons-list-item tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider " onclick="shownotifications();">
+                          <div class="left">
+                            <ons-icon icon="fa-bell" style="color: #b97fcf;"></ons-icon>
+                          </div>
+                          <div class="center" data-i18n="Notifications">
+                            Notifications
+                          </div>
+              
+                          <div class="right">
+                              <ons-icon id="notification-icon" icon='fa-circle' size='10px' style='color:white;'></ons-icon> 
+                          </div>
+                      </ons-list-item>
+              
+              
+                   <!--   <ons-list-item tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider" onclick="dialcallcenter()">
+                          <div class="left">
+                            <ons-icon icon="fa-phone" style="color: #6fe46e;"></ons-icon>
+                          </div>
+                          <div class="center" data-i18n="Call for help">
+                            Call for help
+                          </div>
+                      </ons-list-item> -->
+              
+                      <ons-list-item tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider " onclick="rateapp()">
+                          <div class="left">
+                            <ons-icon icon="fa-star" style="color: #eebd60;"></ons-icon>
+                          </div>
+                          <div class="center" data-i18n="Rate App">
+                            Rate App
+                          </div>
+                      </ons-list-item>
+              
+                      <ons-list-item tappable style="cursor: pointer; padding-right: 15px;" modifier="longdivider " onclick="infopage_show()">
+                          <div class="left">
+                            <ons-icon icon="fa-info-circle" style="color: #42a5f5;"></ons-icon>
+                          </div>
+                          <div class="center"  data-i18n="About">
+                            About
+                          </div>
+                      </ons-list-item>
+                    </ons-list> 
+              
+                  </div>
+              
+                  
+                  
+              
+                
+              </ons-page>
+              
+        </template>
+
+
+        <!-- Second navigation component: Splitter. This will disappear if the first component changes its content. -->
+        <template id="splitter.html">
+            <ons-page>
+                <ons-splitter id="mySplitter">
+                <ons-splitter-side page="menu.html" width="75%" collapse >
+                </ons-splitter-side>
+                <ons-splitter-content page="map.html">
+                </ons-splitter-content>
+                </ons-splitter>
+            </ons-page>
+        </template>
+
+            <!-- Third navigation component: Tabbar. This will disappear if the first or second components change their content. -->
+        <template id="map.html">
+            <ons-page id="mappage">
+                <div id="driver-online-indicator" style="position: absolute;top:0;width:100%;z-index:20;display:none;"><img src="img/driver-online-ind.gif" style="display:block;width:100%;height:3px;"/></div>
+                <div style="height:50px;width:100%;position:absolute;z-index: 10;top:15px;"> 
+                    <ons-fab id="menubtn" modifier="mini" style="position:absolute;top:5px;left:20px;visibility:hidden;z-index: 100;background-color:white;" ><ons-icon icon='ion-navicon, material:md-menu' size='22px' style='position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);color:black;'></ons-icon></ons-fab>    
+                    <ons-icon id="nointernet" icon='md-network-alert' size='28px' style='visibility:hidden;position:absolute;top:5px;left:45%;color:black;'></ons-icon>
+                    <div style="position:absolute;right:0px;top:5px;right:20px;"><ons-fab id='driver-available-btn' onclick='setavailable()' modifier="mini" style="background-color: grey;"><ons-icon icon="fa-bolt" style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;color:white;"></ons-icon></ons-fab></div>
+                    <div style="position: absolute;right: 20px;width: 120px;height: 40px;background-color: white;transform: translateY(5px);border-radius: 20px;border: thin solid #777;"><p id="available-status-text" style="font-size: 18px;font-weight: bold;color: #666;margin: 0;position: absolute;top: 10px;left: 10px;overflow-x: hidden; width: 100px;">Offline</p></div>
+                    <div id='driver-available-spinner' style="position:absolute;right:20px;transform: translate(20%);top:-7px;display:none;"><ons-progress-circular indeterminate style="width: 65px;height: 65px;"></ons-progress-circular></div>
+                </div>    
+                <ons-fab id="mylocationbtn" modifier="mini" style="display:block;position:absolute;bottom:250px;right:8%;visibility:hidden;z-index: 100;background-color:white;" onclick="showUserLocationMap()" ><ons-icon icon='ion-navicon, material:md-my-location' size='20px' style='position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);color:black;'></ons-icon></ons-fab>
+                
+                <div id="status-msg-container" style="position: absolute;z-index: 20;top:-1000px;width:95%;left:2.5%;overflow-x:hidden;">
+                    <div class="setbgcolor" id="statusmsg" style="border: thin solid #ccc;visibility:hidden;width:100%;padding:10px;box-sizing: border-box;transition: height 0.5s;height:215px;">
+                        <ons-button id="status-min-max" onclick="$('#statusmsg').toggleClass('statusmsg-minimize');" modifier="outline" style="position:absolute;top:10px;right:10px;" ><ons-icon icon='ion-navicon, material:md-unfold-more' size='24px' style='position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;color:white;'></ons-icon></ons-button>
+                        <img id="status-msg-rider-photo" src="img/dummy-user.png" style='width:50px;height:50px;float:left;margin-bottom:5px;border-radius:50%;margin-right:10px;' />
+                        <div id="user-more-info" style='background-color: #000000;border: 2px solid white;color: #ffffff;width: 15px;height: 15px;border-radius: 50%;left: 45px;top: 42px;position: absolute;' modifier='outline' onclick="showmoreuserinfo()" ><ons-icon style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 8px;" icon='fa-info' ></ons-icon></div>                                             
+                        <div style='display:inline-block;'>
+                            <p id="status-msg-rider-firstname" style='margin:0;font-weight: bold;color:white;'>Michael</p>
+                            <p id="status-msg-rider-rating" style='margin:0;'><img style='width:80px;' src='img/rating-3.png' /></p>                            
+                        </div>
+                        <div style="clear:both;"></div>
+                        <hr style="background-color: white;">
+                        <h4 id="status-msg-pickup-ind" style="font-size:14px;margin-top:12px;color:white;"><ons-icon icon='fa-circle' size='14px' style='color: #24c539; font-size: 14px;'></ons-icon> <span data-i18n="Pick up location">Pick up location</span></h4>
+                        <h4 id="status-msg-dropoff-ind" style="font-size:14px;margin-top:12px;color:white;"><ons-icon icon='fa-map-marker' size='14px' style='color: red; font-size: 14px;'></ons-icon> <span data-i18n="Drop off location">Drop off location</span></h4>
+                        <h4 id="status-msg-stop-ind" style="font-size:14px;margin-top:12px;color:white;"><ons-icon icon='fa-square' size='14px' style='color: orange; font-size: 14px;'></ons-icon> <span data-i18n="Stop-off location">Stop-off location</span></h4>
+                        <h3 id="status-msg-address" style="max-height: 36px;color: white;height: 2.0em;line-height: 1.2em;overflow: hidden;font-size: 18px;">
+                            
+                        </h3>
+                        <hr style="background-color: white;">
+                        <div style="display: flex;flex-wrap: nowrap;justify-content: space-evenly;align-items: center;">
+                            <ons-button id="status-msg-call-rider" data-number="" style='color: white;margin-right: 5px;width:50px;' modifier='outline' onclick="call_rider($(this).data('number'))"><ons-icon style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;" icon='fa-phone' ></ons-icon></ons-button>
+                            <!-- <ons-button id="status-msg-sms-rider" data-number="" style='color: white;margin-right: 5px;width:50px;' modifier='outline' onclick="sms_rider($(this).data('number'))"><ons-icon style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;" icon='fa-envelope' ></ons-icon></ons-button> -->
+                            <div style="display:inline-block;position:relative;"><span id="chat-new-msg-ind" style="position:absolute;width:15px;height:15px;border-radius:50%;background-color:red;display:none;top: 5px;left: 10px;z-index: 10;"></span><ons-button id="status-msg-chat-rider" style='color: white;margin-right: 5px;width:50px;' modifier='outline' data-bookingid="1" onclick="chat_window.show({animation:'fade'});chat_update_content($(this).data('bookingid'))"><ons-icon style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;" icon='fa-comment' ></ons-icon></ons-button></div>
+                            <ons-button id="status-location-share" style='color: white;margin-right: 5px;width:50px;' modifier='outline' onclick="share_message(__('Share my location'), __('Hi, I am on a trip. This is my current location'),`https:\/\/maps.google.com/?q=${driver_lat},${driver_lng}`)" ><ons-icon style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;" icon='fa-share-alt' ></ons-icon></ons-button>
+                            <ons-button id="status-msg-locate-rider" data-plat="" data-pickdrop="" data-plng="" style='color: white;margin-right: 5px;width:50px;' modifier='outline' onclick="locnav($(this).data('pickdrop'),0,$(this).data('plng'),$(this).data('plat'))"><ons-icon style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;" icon='fa-map-marker' ></ons-icon></ons-button>
+                            <ons-button id="status-msg-nav-rider" data-plat="" data-pickdrop="" data-plng="" style='color: white;margin-right: 5px;width:50px;' modifier='outline' onclick="locnav($(this).data('pickdrop'),1,$(this).data('plng'),$(this).data('plat'))" ><ons-icon style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 20px;" icon='fa-location-arrow' ></ons-icon></ons-button>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                
+                
+                <div class="setbgcolor" id="driver-stats-panel" style="border-top-right-radius: 15px;border-top-left-radius: 15px;position:absolute;display: flex;flex-wrap: nowrap;align-items: center;justify-content: space-between;border-top: thin solid lightgrey;position: absolute;z-index: 5;bottom:0;width:100%;padding:10px;box-sizing: border-box;color:white;">
+                    <div style="width:33%;border-right:thin solid white">
+                        <p style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;text-align:center;font-size:12px" data-i18n="Completed trips" >Completed trips</p>
+                        <p id="driver-stats-completed" style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;text-align:center;font-size:14px;font-weight: bold;">0</p>
+                    </div>
+
+                    <div style="width:33%;border-right:thin solid white" onclick="earningspage_show()">
+                        <p style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;text-align:center;font-size:12px" data-i18n="Todays earning" >Todays earning</p>
+                        <p id="driver-stats-earning" style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;text-align:center;font-size:14px;font-weight: bold;">0.00</p>
+                    </div>
+
+                    <div style="width:33%;">
+                        <p style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;text-align:center;font-size:12px" data-i18n="Time online" >Time online</p>
+                        <p id="driver-stats-time-online" style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;text-align:center;font-size:14px;font-weight: bold;">0M</p>
+                    </div>
+                </div>
+
+
+                <div id="ride-control-panel" style="visibility:hidden;position: absolute;z-index: 10;bottom:0;width:100%;padding:10px;box-sizing: border-box;background-color: rgba(0, 0, 0, 0.65);">
+                   <div id="ride-stats" style="margin-bottom: 5px;border-bottom: thin solid grey;padding-bottom: 5px;">
+                       <div style="display: inline-block;margin-right:10px;">
+                            <ons-icon style="color:#999;" icon='fa-automobile' ></ons-icon>
+                           <span id="ride-stats-dist" style="margin: 0px 0px;color:#ffce5a;font-weight: bold;">0.00KM</span>
+                       </div>
+
+                       <div style="display: inline-block;">
+                            <ons-icon style="color:#999;" icon='fa-clock-o' ></ons-icon>
+                            <span id="ride-stats-time" style="margin: 0px 0px;color:cyan;font-weight: bold;">0 Secs</span>
+                        </div>
+
+                   </div>
+
+                   <div>
+                        <ons-button style="width:65%;transition:all;" data-state="0" id="ride-action-btn" modifier="large" onclick="processactionbtn()">I've Arrived</ons-button>
+                        <ons-button style="width:30%;float:right;background-color: red;" id="ride-cancel-btn" data-bookid="" modifier="large" onclick="drivercancel($(this).data('bookid'))" data-i18n="Cancel">Cancel</ons-button>
+
+                   </div>
+                    
+                </div>
+
+                <script>        
+
+                                        
+                   
+                    
+                    var z = document.getElementById("rider-image-preload");
+                    z.onload = function() {
+                        var v = document.getElementById("rider-image");
+                        v.src = z.src;
+                    };
+
+                    var v = document.getElementById("user-info-image-preload");
+                    v.onload = function() {
+                        var z = document.getElementById("user-info-photo");
+                        z.src = v.src;
+                    };
+
+
+                </script>
+                
+
+                
+                
+
+                <div style="width:100%;height:100%;" id="map-canvas" ></div>
+              
+            </ons-page>
+        </template>
+
+        
+               
+
+
+        <template id="login.html">
+            <ons-page id="loginpage">
+                <div style="width:100%;height:100%;background-color:white;">
+                    
+                    <div class="center-screen" style="width:80%">
+                        <div style="text-align: center">
+                                <img src="img/logo.png" style="height:65px;margin-bottom:80px" />
+                        </div>                        
+                        
+                        <form id="login-form">
+                                
+                            <div style="text-align: center;">                    
+                                <div>
+                                    <div style="margin-right:5px;display:inline-block;"><ons-icon icon='fa-phone' size='14px' style='color:grey;'></ons-icon></div>
+                                    <!-- <div style="width:85%;display:inline-block;"><ons-input  style="width:100%" id="login-phone" type="number" modifier="underbar" placeholder="Phone" float></ons-input></div> -->
+                                    <div class="intl-tel-code" style="min-width:60px;display: inline-block;"><div id="country-flag" class="iti__flag iti__ar" data-country="ar" style="width:20px;display:inline-block;background-color: white;"></div><span id="tel-code" style="font-size:16px;" data-dialcode="54" > +54</span></div>
+                                    
+                                    <div style="width:calc(100% - 90px);display:inline-block;"><ons-input  style="width:100%" id="login-phone" type="number" modifier="underbar" data-i18nnlogin="Phone" placeholder="Phone"></ons-input></div>  
+                                </div>
+                                <br>
+                                <br>
+                                <div>
+                                    <div style="margin-right:5px;display:inline-block;"><ons-icon icon='fa-lock' size='14px' style='color:grey;'></ons-icon></div>
+                                    <div style="width:calc(100% - 24px);display:inline-block;"><ons-input style="width:100%" id="login-password" modifier="underbar" type="password" data-i18nnlogin="Password" placeholder="Password" float></ons-input> </div> 
+                                </div>                                               
+                                
+                                <br>
+                                <br>
+                                <p style="margin-top: 0;margin-bottom: 40px;text-align: right;">
+                                    <a style="color:#2979ff;" onclick="forgotPwd()" data-i18nlogin="Forgot my password">Forgot my password</a>
+                                </p>                                               
+                                <ons-button style="width:100%" modifier="large" id="loginbut" onclick="login()" data-i18nlogin="Sign in">Sign in</ons-button>
+                                
+                            </div>                        
+                        </form>
+                                                
+                            <br>
+                            <p style="text-align:center;" data-i18nlogin="Don't have an account?">
+                                Don't have an account?                            
+                            </p>
+                            <p style="text-align:center;">
+                                
+                                <ons-button style="width:100%" modifier="large" onclick="Signup_show()" data-i18nlogin="Sign up">Sign up</ons-button>
+                            </p>
+
+                            <div style="display: flex;overflow: hidden;justify-content: center;align-items: center;margin-top: 60px;position: relative;">
+                                <div style="display:flex;flex-wrap: nowrap;padding: 7px;" id="login-lang-sw">
+                                    <ons-icon icon='fa-language' size='16px' style='color:grey;margin-right:5px;'></ons-icon>
+                                    <span style="font-weight:bold;color:#2979ff;font-size: 13px;" id="login-lang">English</span>
+                                </div>
+        
+                                <select id="lang-select2" class="select-input" style='position:absolute;font-size:16px;font-weight: bold;color:#2979ff;background: none;top: -5px;z-index: 0;opacity: 0;'>
+                                    
+                                </select>                       
+                                
+                            </div>
+                        
+                        
+                    </div>
+                    
+                </div>
+            </ons-page>
+        </template>    
+                
+
+        <template id="signup.html">
+            <ons-page id="signuppage">
+                    <ons-toolbar>
+                        <div class="left"><ons-back-button>Back</ons-back-button></div>
+                        <div class="center" data-i18nsignup="Personal Details">Personal Details</div>
+                    </ons-toolbar>
+                <div class="center-screen" style="width:100%;height:100%;background-color:white;overflow-x:hidden;">
+                    
+                    <table style="height:100%;width:90%;table-layout: fixed;margin-left:auto;margin-right:auto;min-height: 700px;">
+                        <tbody>
+                            <tr>
+                                <td colspan="10">
+                                    <div id="image-editor" style="border:0px;position:relative;margin-bottom:30px;text-align:center;" >
+                                        <input type="file" style='visibility:hidden;position:absolute;' class="cropit-image-input" />
+                                        <div style="display:inline-block;position:relative;">
+                                            <div style='background-image: url(img/dummy-user.png);background-size: cover;overflow:hidden;border-radius: 50%;margin-left: auto;margin-right: auto;margin-top: 7px;width: 150px;height: 150px;cursor: move;' class="cropit-preview"></div>
+                                            <button class="setfgcolor" style="box-shadow: 1px 1px 5px 0px #afafaf;outline:none;position: absolute;width:50px;height:50px;border-radius: 50%;border: thin solid transparent;left: 60%;bottom:0;"><i style="font-size: 20px;color: white;" class='select-image-btn fa fa-camera'></i></button>
+                                        </div>
+
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td colspan="1">
+                                    <ons-icon icon='fa-user' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="4">
+                                     
+                                    <ons-input style="width: 90%;" id="firstname" modifier="underbar" data-i18nnsignup="Firstname" placeholder="Firstname" float></ons-input> 
+                                </td>
+
+                                <td colspan="1">
+                                    <ons-icon icon='fa-user' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="4">
+                                   <ons-input style="width: 90%;" id="lastname" modifier="underbar"  data-i18nnsignup="Lastname" placeholder="Lastname" float></ons-input>
+                                </td>
+                                
+                            </tr>
+
+                            <tr>
+                                <td colspan="1">
+                                    <ons-icon icon='fa-map' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="address" modifier="underbar"  data-i18nnsignup="Address" placeholder="Address" float></ons-input>
+                                </td>
+
+                            </tr>
+
+                            <tr>
+                                <td colspan="1">
+                                    <ons-icon icon='fa-map' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="state" modifier="underbar"  data-i18nnsignup="State" placeholder="State" float></ons-input>
+                                </td>
+
+                            </tr>
+
+                            <tr>
+                                <td colspan="1">
+                                    <ons-icon icon='fa-phone' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <div class="intl-tel-code" style="min-width:60px;display: inline-block;"><div id="country-flag-reg" class="iti__flag iti__ar" data-country="ar" style="width:20px;display:inline-block;background-color: red;"></div><span id="tel-code-reg" style="font-size:16px;" data-dialcode="54" > +54</span></div>
+                                    
+                                    <div style="width:calc(100% - 90px);display:inline-block;"><ons-input  style="width:100%" id="phone" type="number" modifier="underbar" data-i18nnsignup="Phone" placeholder="Phone"></ons-input></div> 
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td colspan="1">
+                                    <ons-icon icon='fa-envelope' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="reg_email" modifier="underbar" data-i18nnsignup="E-mail" placeholder="E-mail" float></ons-input>
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td colspan="1">
+                                    <ons-icon icon='fa-lock' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="reg_password" modifier="underbar" type="text" data-i18nnsignup="Password" placeholder="Password" type="password" float></ons-input>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="1">
+                                    <ons-icon icon='fa-lock' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="reg_rpassword" modifier="underbar" type="text" data-i18nnsignup="Confirm Password" placeholder="Confirm Password" type="password" float></ons-input>
+                                </td>
+                            </tr>
+                            
+                           
+
+                            <tr>
+                                <td colspan="10" style='text-align:center;'>
+                                    <ons-button style="width:100%" data-i18nsignup="Next" onclick="regstep1()">Next</ons-button>
+                                </td>
+                            </tr>
+
+                            
+                        </tbody>
+                    </table>
+
+
+                     
+                    
+                </div>
+            </ons-page>
+        </template>
+
+        
+        <template id="vehicledetailsreg.html">
+            <ons-page id="vehicledetailsregpage">
+                    <ons-toolbar>
+                        <div class="left"><ons-back-button>Back</ons-back-button></div>
+                        <div class="center" data-i18nvdetregpg="Vehicle Details">Vehicle Details</div>
+                    </ons-toolbar>
+                <div class="center-screen" style="width:100%;height:100%;background-color:white;overflow-x:hidden;">
+                    
+                    <table style="height:100%;width:90%;table-layout: fixed;margin-left:auto;margin-right:auto;min-height: 1024px;">
+                        <tbody>
+                            
+                            <tr style="height:80px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-random' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <p style="color:#8a8a8a;font-size:12px;margin: 0 0" data-i18nvdetregpg="Select service city">Select service city</p>
+                                    <p style="margin: 3px 0;">
+                                        <ons-select class="select">
+                                            <select class="select-input" id="cityroute" style='font-size: 16px;font-weight: bold;color:#2979ff;margin-top: -5px;background: none;' >
+                                                                
+                                                            
+                                            </select>
+                                        </ons-select>
+                                    </p>
+                                </td>
+                            </tr>
+                            
+                            <tr style="height:60px;">
+
+                                <td colspan="1">
+                                    <ons-icon icon='fa-taxi' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+
+                                <td colspan="9">
+                                    <p style="color:#8a8a8a;font-size:12px;margin: 0 0" data-i18nvdetregpg="Select vehicle category">Select vehicle category</p>
+                                    <p style="margin: 3px 0;">
+                                        <ons-select class="select">
+                                            <select class="select-input" id="vehicle-cat" style='font-size: 16px;font-weight: bold;color:#2979ff;margin-top: -5px;background: none;' >
+                                                
+                                            </select>
+                                        </ons-select>
+                                    </p>
+                                    
+                                </td>                                
+
+                            </tr>
+
+                            <tr>
+                                <td colspan="1"></td>
+                                <td colspan="9">
+                                    <div style="text-align:center;"><img id="vehicle-image"  src="" style="width:100px;display:inline-block;" /></div>
+                                    <p id="vehicle-desc" style="text-align:center;margin: 3px 0;color:#777;font-size:13px;"></p>
+                                </td>
+                            </tr>
+
+                            <tr style="height:60px;">
+
+                                <td colspan="1">
+                                    <ons-icon icon='fa-car' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="carmake" modifier="underbar"  data-i18nnvdetregpg="Vehicle model" placeholder="Vehicle model" float></ons-input>
+                                </td>
+
+                            </tr>
+
+                            <tr style="height:60px;">
+                                <td colspan="1">
+                                        <ons-icon icon='fa-window-maximize' size='14px' style='color:grey;'></ons-icon>
+                                    </td>
+                                    <td colspan="9">
+                                        <ons-input style="width: 100%;" id="lplatenum" modifier="underbar" type="text"  data-i18nnvdetregpg="License plate number" placeholder="License plate number" float></ons-input>
+                                    </td>
+                                </tr>
+
+                            <!-- <tr style="height:60px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-barcode' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="regnum" modifier="underbar" type="text" data-i18nnvdetregpg="Registration number" placeholder="Registration number" float></ons-input>
+                                </td>
+                            </tr> -->
+
+
+                            <tr style="height:60px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-tint' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <p style="color:#8a8a8a;font-size:12px;margin: 0 0" data-i18nvdetregpg="Select paint color">Select paint color</p>
+                                    <p style="margin: 3px 0;">
+                                        <ons-select class="select">
+                                            <select class="select-input" id="paintcolor" style='font-size: 16px;font-weight: bold;color:#2979ff;margin-top: -5px;background: none;' >
+                                                <option value="Black" selected="" data-i18nvdetregpg="Black">Black</option>
+                                                <option value="Brown" data-i18nvdetregpg="Brown">Brown</option>
+                                                <option value="Red" data-i18nvdetregpg="Red">Red</option>
+                                                <option value="Orange" data-i18nvdetregpg="Orange">Orange</option>
+                                                <option value="Yellow" data-i18nvdetregpg="Yellow">Yellow</option>
+                                                <option value="Green" data-i18nvdetregpg="Green">Green</option>
+                                                <option value="Blue" data-i18nvdetregpg="Blue">Blue</option>
+                                                <option value="Sky-Blue" data-i18nvdetregpg="Sky-Blue">Sky-Blue</option>
+                                                <option value="Pink" data-i18nvdetregpg="Pink">Pink</option>
+                                                <option value="Purple" data-i18nvdetregpg="Purple">Purple</option>
+                                                <option value="Grey-Ash" data-i18nvdetregpg="Grey">Grey</option>
+                                                <option value="White" data-i18nvdetregpg="White">White</option>
+                                                <option value="Gold" data-i18nvdetregpg="Gold">Gold</option>
+                                                <option value="Silver" data-i18nvdetregpg="Silver">Silver</option>                   
+                                                            
+                                            </select>
+                                        </ons-select>
+                                    </p>
+                                </td>
+                            </tr>
+
+
+                            
+
+                            <tr style="height:60px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-id-card' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <p style="color:#8a8a8a;font-size:12px;margin: 0 0" data-i18nvdetregpg="Upload driving license">Upload driving license</p>
+                                    
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="1"></td>
+                                <td colspan="9">
+                                    <div id="driver-license-image-container" style="border:0px;position:relative;margin-bottom:30px;margin-top:-30px;" >
+                                        <input id='driver-license-file-input' type="file" style='visibility:hidden;' />
+                                        <img id="driver-license-image" style='display:block;border:0;width:100%;' src="img/drv-license.png"/>
+                                        <button id='select-drv-license-image-btn' style="box-shadow: 1px 1px 5px 0px #afafaf;border:0;outline:none;position: absolute;width:50px;height:50px;right: 0;bottom:0;background-color: #2979ff;"><i style="font-size: 20px;color: white;" class='fa fa-cloud-upload'></i></button>
+                                    </div>
+                                </td>
+
+                            </tr>
+                            
+
+
+                            <tr style="height:60px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-certificate' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <p style="color:#8a8a8a;font-size:12px;margin: 0 0" data-i18nvdetregpg="Upload road worthiness certificate">Subir documento de identidad</p>
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td colspan="1"></td>
+                                <td colspan="9">
+                                    <div id="road-worth-image-container" style="border:0px;position:relative;margin-bottom:30px;margin-top:-30px;" >
+                                        <input id='road-worth-file-input' type="file" style='visibility:hidden;' />
+                                        <img id="road-worth-image" style='display:block;border:0;width:100%;' src="img/road-worth.png"/>
+                                        <button id='select-road-worth-image-btn' style="box-shadow: 1px 1px 5px 0px #afafaf;border:0;outline:none;position: absolute;width:50px;height:50px;right: 0;bottom:0;background-color: #2979ff; border-radius: 10px;"><i style="font-size: 20px;color: white;" class='fa fa-cloud-upload'></i></button>
+                                    </div>
+                                </td>
+
+                            </tr>
+                            
+                           
+
+                            <tr>
+                                <td colspan="10" style='text-align:center;'>
+                                    <ons-button style="width:100%;margin-bottom:10px;" onclick="regstep2()" data-i18nvdetregpg="Next">Next</ons-button>
+                                </td>
+                            </tr>
+
+                            
+                        </tbody>
+                    </table>
+
+
+                     
+                    
+                </div>
+            </ons-page>
+        </template>
+
+
+
+
+        <template id="bankdetails.html">
+            <ons-page id="bankdetailspage">
+                    <ons-toolbar>
+                        <div class="left"><ons-back-button>Back</ons-back-button></div>
+                        <div class="center" data-i18nbankdetpg="Bank Account Details">Bank Account Details</div>
+                    </ons-toolbar>
+                <div class="center-screen" style="width:100%;height:100%;background-color:white;overflow-x:hidden;">
+                    
+                    <table style="width:90%;table-layout: fixed;margin-left:auto;margin-right:auto;">
+                        <tbody>
+                                                        
+                            <tr style="height:65px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-user' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                        
+                                    <ons-input style="width: 90%;" id="acc-holders-name" modifier="underbar" data-i18nnbankdetpg="Account name" placeholder="Account name" float></ons-input> 
+                                </td>                               
+                                
+                            </tr>
+
+                            <tr style="height:65px;">
+                                
+                                <td colspan="1">
+                                    <ons-icon icon='fa-barcode' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 90%;" id="acc-number" modifier="underbar"  data-i18nnbankdetpg="Account number" placeholder="Account number" float></ons-input>
+                                </td>
+                                
+                            </tr>
+
+                            <tr style="height:65px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-bank' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <p style="color:#8a8a8a;font-size:12px;margin: 0 0" data-i18nbankdetpg="Select Bank">Select Bank</p>
+                                    <p style="margin: 3px 0;">
+                                        <ons-select class="select">
+                                            <select class="select-input" id="banklist" style='font-size: 16px;font-weight: bold;color:#2979ff;margin-top: -5px;background: none;' >
+                                                                                           
+                                                <option value="044">Access Bank</option> 
+                                                <option value="023">Citibank</option> 
+                                                <option value="063">Diamond Bank</option> 
+                                                <option value="050">Ecobank</option> 
+                                                <option value="040">Equitorial Trust Bank</option> 
+                                                <option value="011">First Bank</option> 
+                                                <option value="214">FCMB</option> 
+                                                <option value="070">Fidelity Bank</option> 
+                                                <option value="085">Finbank</option> 
+                                                <option value="058">Guaranty Trust Bank</option> 
+                                                <option value="030">Heritage Bank</option> 
+                                                <option value="082">Keystone Bank</option> 
+                                                <option value="014">Mainstreet Bank</option> 
+                                                <option value="076">Skye Bank</option> 
+                                                <option value="221">Stanbic IBTC Bank</option> 
+                                                <option value="032">Union Bank of Nigeria</option> 
+                                                <option value="033">United Bank of Africa (UBA)</option> 
+                                                <option value="215">Unity Bank</option> 
+                                                <option value="035">Wema Bank</option> 
+                                                <option value="057">Zenith Bank</option> 
+                                                <option value="xxx" data-i18nbankdetpg="Other bank...">Other bank...</option>                                                                                                         
+                                                            
+                                            </select>
+                                        </ons-select>
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <tr id="other-bank-name" style="display:none;height:65px;">
+                                
+                                <td colspan="1">
+                                    <ons-icon icon='fa-bank' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 90%;" id="bank-name" modifier="underbar"  data-i18nnbankdetpg="Bank name" placeholder="Bank name" float></ons-input>
+                                </td>
+                                
+                            </tr>
+
+
+                            <tr id="other-bank-code" style="display:none;height:65px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-bank' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="bank-code" modifier="underbar"  data-i18nnbankdetpg="Bank identification code" placeholder="Bank identification code" float></ons-input>
+                                </td>
+
+                            </tr>
+
+
+
+                            <!-- <tr style="height:65px;">
+                                <td colspan="1">
+                                    <ons-icon icon='fa-barcode' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="bank-swift" modifier="underbar" type="text" placeholder="SWIFT / BIC" float></ons-input>
+                                </td>
+                            </tr> -->
+
+                            <tr id="ref-code-msg" style="height:65px;display:none;">
+                                <td colspan="1">
+                                    
+                                </td>
+                                <td colspan="9">
+                                    <p style='font-size:14px;' id="ref-code-msg-text" ></p>
+                                </td>
+                            </tr>
+
+
+                            <tr id="ref-code-input" style="height:65px;display: none;" >
+                                <td colspan="1">
+                                    <ons-icon icon='fa-group' size='14px' style='color:grey;'></ons-icon>
+                                </td>
+                                <td colspan="9">
+                                    <ons-input style="width: 100%;" id="ref_code" modifier="underbar" data-i18nnbankdetpg="Referral Code" placeholder="Referral Code" float></ons-input>
+                                </td>
+                            </tr>
+                                                        
+                            
+
+                            <tr style="height:150px;">
+                                <td colspan="10" style='text-align:center;'>
+                                    <div style="text-align: left;margin-bottom: 20px;margin-top: 10px;"><ons-checkbox id="terms-accept"></ons-checkbox> <span style="color:#2979ff;font-weight:bold;" onclick="window.open(siteurl + '/terms.php','_system')" data-i18nbankdetpg="I accept the terms and conditions">I accept the terms and conditions</span></div>
+                                    <ons-button style="width:100%;margin-bottom: 10px;" onclick="regstep3()" data-i18nbankdetpg="Create Account">Create Account</ons-button>
+                                </td>
+                            </tr>
+
+                            
+                        </tbody>
+                    </table>
+
+
+                        
+                    
+                </div>
+            </ons-page>
+        </template>
+
+
+
+
+        <template id="verify.html">
+                <ons-page id="verifypage" on-device-backbutton="return false">
+                    <ons-toolbar>
+                        
+                        <div class="center" data-i18nverifypg="Activate Account">Activate Account</div>
+                    </ons-toolbar>
+                    
+                    <div class="screen-wrap-white">
+                        <div class="center-screen" style="width:100%;height:100%;overflow-x:hidden;">
+                            <div style="text-align: center; margin:5%">
+                                <p data-i18nverifypg="Enter the activation code sent to your Email after registration verification into the field below to activate your account">
+                                    Enter the activation code sent to your Email after registration verification into the field below to activate your account.
+                                </p>
+                            </div>
+                            <div style="text-align: center; margin: 5%;">
+                                <br>
+                                <p>
+                                    <!-- <ons-input id="verify_code" modifier="underbar" type="number" placeholder="Verification code" float></ons-input> -->
+                                    <input id='verify_code' maxlength='5' style='text-transform:uppercase;padding: 10px;border: thin solid #000000;border-radius: 20px;letter-spacing: 25px;text-align: center;font-size: 20px;margin-left:auto;margin-right:auto;' type='text' value="">
+                                </p>
+                                <br>
+                                <p data-i18nverifypg="No activation code received? please get in touch with us">
+                                    No activation code received? please get in touch with us
+                                </p>
+                                
+                                <p style="margin-top: 30px;">
+                                    <ons-button style="width:100%;" onclick="verifyCode()" data-i18nverifypg="Activate">Activate</ons-button>
+                                </p>
+                                
+
+                            </div>
+                        </div>
+                    </div>
+                </ons-page>
+        </template>
+
+
+        <template id="verifyphone.html">
+            <ons-page id="verifyphonepage">
+                <ons-toolbar>
+                    
+                    <div class="center" data-i18nverifyphone="Verify">Verify</div>
+                </ons-toolbar>
+                
+                <div class="screen-wrap-white">
+                    <div class="center-screen" style="width:100%;height:100%;overflow-x:hidden;">
+                        <div style="text-align: center; margin:5%">
+                            <p id="verification-page-text" data-i18nverifyphone="A verification code has been sent to your phone via SMS. Please enter the code into the field below">
+                                A verification code has been sent to your phone via SMS. Please enter the code into the field below
+                            </p>
+                        </div>
+                        <div style="text-align: center; margin: 5%;">
+                            <br>
+                            <p>
+                                <!-- <ons-input id="verify_code" modifier="underbar" type="number" placeholder="Verification code" float></ons-input> -->
+                                <input id='verify_phone_code' maxlength='6' style='text-transform:uppercase;padding: 10px;border: thin solid #000000;border-radius: 20px;letter-spacing: 25px;text-align: center;font-size: 20px;margin-left:auto;margin-right:auto;width:90%;' type='text' value="">
+                            </p>
+                            <br>
+                            <p>
+                                <span data-i18nverifyphone="Didn't receive a verification code?">Didn't receive a verification code?</span> <a data-phonenumber="" style="color:red;" id="resend-phone-code-btn" onclick="resendPhoneCode()" data-i18nverifyphone="Resend Code">Resend Code</a>
+                            </p>
+                            
+                            <p style="margin-top: 30px;">
+                                <ons-button style="width:100%;" onclick="verifyPhoneCode()" data-i18nverifyphone="Verify" >Verify</ons-button>
+                            </p>
+                            
+                            
+                        </div>
+                    </div>
+                </div>
+            </ons-page>
+        </template>
+                              
+         
+       
+
+
+
+        
+
+        
+        <script type="text/javascript" src="cordova.js"></script>
+        <script src="js/firebase-app.js"></script>
+        <script src="js/firebase-database.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+        <script src="js/app.js"></script> <!-- load our app javascript -->
+        <script src="js/controllers.js"></script> <!-- load our app javascript -->
+        <script>
+        /* $(document).ready(function(){
+            checkLoginStatus();
+            
+        }); */
+        
+        </script>
+        
+        
+    </body>
+</html>

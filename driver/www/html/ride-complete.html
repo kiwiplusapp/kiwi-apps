@@ -1,0 +1,55 @@
+<ons-page id="ridecomplete">
+    <ons-toolbar>
+      <div class="left"><ons-back-button>Back</ons-back-button></div>
+      <div class="center" data-i18nridecomp="Ride Completed">Ride Completed</div>
+    </ons-toolbar>
+    <div class="screen-wrap-white">
+      <div class="center-screen" style="width:100%;height:100%;overflow-x:hidden;">
+           
+            <div style="padding: 25px 0px;background-color: var(--set-foreground-color);color: white;">
+                <p style='text-align:center;font-size: 22px;' data-i18nridecomp="Total Fare">Total Fare</p>
+                <h1 style="font-size:40px;text-align:center;margin-top:0" id="ride-complete-amount">0.00</h1>
+                <h3 style="text-align:center;margin-top:0" id="ride-complete-ptype"></h3>
+                <hr style="border: thin solid #bce1ff;width:80%;">
+                
+                <div style='text-align:center;margin-top:20px;'>
+                    <div style="display: inline-block;margin-right:10px;">
+                        <ons-icon style="color:#fff;" icon='fa-automobile' ></ons-icon>
+                        <span id="ride-complete-stats-dist" style="margin: 0px 0px;color:#fff;font-weight: bold;">0.00KM</span>
+                    </div>
+
+                    <div style="display: inline-block;margin-right:10px;">
+                        <ons-icon style="color:#fff;" icon='fa-clock-o' ></ons-icon>
+                        <span id="ride-complete-stats-time" style="margin: 0px 0px;color:#fff;font-weight: bold;">0 Secs</span>
+                    </div>
+
+                </div>
+                
+            </div>
+            <p style="text-align:center;color:rgb(0, 0, 0);font-weight:bold;" data-i18nridecomp="Rate your rider">Rate your rider</p>
+
+
+            <div style="text-align:center;">
+                <img id="rate-rider-image" style="display: inline-block;width: 150px;border-radius: 50%;border: thin solid white;" src='img/dummy-user.png' />
+                
+            </div>
+            <h4 id="rate-rider-name" style="text-align:center;color:black;">Michael</h4>
+            <div style="color: rgb(0, 0, 0);margin-top: 50px;margin-bottom: 30px;text-align:center;">
+                <span id="star-level-1" data-level="1" style="font-size:40px;color:yellow;" class="fa fa-star rate-star"></span><span id="star-level-2" data-level="2" style="font-size:40px;" class="fa fa-star rate-star"></span><span id="star-level-3" data-level="3" style="font-size:40px;" class="fa fa-star rate-star"></span><span id="star-level-4" data-level="4" style="font-size:40px;" class="fa fa-star rate-star"></span><span id="star-level-5" data-level="5" style="font-size:40px;" class="fa fa-star rate-star"></span>
+            </div>
+            
+            <p style="text-align: center;margin-top:20px;">
+                <ons-input style="width: 80%;" id="ride-comment" modifier="underbar" type="text" data-i18nnridecomp="Comment on your ride experience..." placeholder="Comment on your ride experience..."></ons-input>
+            </p>
+            
+            <div style="text-align: center;margin-top:30px;margin-bottom:20px;"><ons-button id="rate-button" data-bookingid="" style="width:80%"  onclick="rate_ride($(this).data('bookingid'),$('#ride-comment').val());" data-i18nridecomp="Submit" >Submit</ons-button></div>
+            
+                   
+                                        
+      </div>              
+    </div>
+
+   
+  
+</ons-page>
+  

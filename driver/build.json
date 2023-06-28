@@ -1,0 +1,12 @@
+{
+    "android": {        
+        "release": {
+            "keystore": "keystore.jks",
+            "storePassword": "mellamoleonel",
+            "alias": "kiwiconductores",
+            "password" : "mellamoleonel",
+            "keystoreType": "",
+            "packageType": "bundle"
+        }
+    }
+}
